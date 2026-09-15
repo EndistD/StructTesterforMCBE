@@ -114,7 +114,7 @@ class TextInButton(GUIButton):
                     self.textin = self.textin[:-1]
                 elif events.key == pg.K_RETURN:
                     self.textsaved = self.textin
-                    self.fontcolor = "Grey"
+                    # 只退出编辑状态，保留 confirm 计算出的校验色（合法绿/非法红），不置灰
                     self.is_selected = False
                 else:
                     inputkey = events.unicode
