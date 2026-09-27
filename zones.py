@@ -26,6 +26,7 @@ def _active_ticks(clock, command, cur):
 
 class Zone:
     is_zone = True
+    is_redstone = False  # 红石机制相关区域：仅在红石刻执行
     # 空间
     cpos = [0, 0]  # 区块坐标
     bpos = [0, 0]  # 相对坐标
@@ -103,6 +104,7 @@ class Zone:
 class RedPlan(Zone):
     hidden = False
     gui = None
+    is_redstone = True
 
     def __init__(self, cpos, bpos):
         super().__init__(cpos, bpos)
@@ -135,9 +137,6 @@ class RedPlan(Zone):
 
     def function(self):
         super().function()
-        # a < b 为区间 [a, b)；a == b 为单刻脉冲。
-        # 脉冲定位：a == clock 时在 cur == 0 触发（等价于 tick%clock==0，如 clock=6 时 tick=6/12/18…），
-        #            a < clock 时在 cur == a 触发。
         if self.clock != 0:
             cur = config.state.tick % self.clock
             on = any(
@@ -152,7 +151,7 @@ class RedPlan(Zone):
                 for a, b in self.command
             )
         if on and not self.target.zone_powered:
-            dur = max(_active_ticks(self.clock, self.command, cur if self.clock != 0 else config.state.tick), 1) * config.state.Oneticktime
+            dur = max(_active_ticks(self.clock, self.command, cur if self.clock != 0 else config.state.tick), 1) * config.state.Oneticktime * 2
             effects.create_fade(self.target.abpos, (255, 0, 0), dur)
         self.target.zone_powered = on
 
@@ -160,6 +159,7 @@ class RedPlan(Zone):
 class MovingPlan(Zone):
     hidden = False
     gui = None
+    is_redstone = True
 
     imageway = config.resource_path("files/blocks/movingplan.png")
     iconway = config.resource_path("files/icon/movingplan.png")
@@ -211,11 +211,11 @@ class MovingPlan(Zone):
                 or (a < b and a <= config.state.tick < b)
                 for a, b in self.command
             )
-        if on and self.target.moving_time == 0:
+        if on and self.target.is_moving == 0:
             # 特效橙色，时长 = 本次激活持续刻数 × 每刻时间，下限为一刻时长
-            dur = max(_active_ticks(self.clock, self.command, cur if self.clock != 0 else config.state.tick), 1) * config.state.Oneticktime
+            dur = max(_active_ticks(self.clock, self.command, cur if self.clock != 0 else config.state.tick), 1) * config.state.Oneticktime * 2
             effects.create_fade(self.target.abpos, (255, 165, 0), dur)
-        self.target.moving_time = 1 if on else 0
+        self.target.is_moving = 1 if on else 0
 
 
 class GrowPlan(Zone):

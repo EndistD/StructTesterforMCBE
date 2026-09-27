@@ -41,7 +41,6 @@ def ubturnbid(ubpos):
     return int(bid)
 
 
-# ── id → 坐标 ──
 def cidturnc(cid):
     cx = cid % config.state.ChunkSize
     cy = cid // config.state.ChunkSize
@@ -183,6 +182,7 @@ def reset_world(chunk_size=None):
                              for c in range(cs * cs)]
     config.state.ChunkOrder = list(range(cs * cs))
     config.state.BlockOrder = list(range(ss * ss))
+    config.state.PendingTickList = [config.PendingTickQueue() for _ in range(cs * cs)]
 
     from simulation import createbarrier
     createbarrier(config.state.ChunkList)

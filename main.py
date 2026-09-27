@@ -25,11 +25,7 @@ pg.key.stop_text_input()
 config.state.windowicon = pg.image.load(config.resource_path("files/icon/piston.png")).convert_alpha()
 pg.display.set_icon(config.state.windowicon)
 
-# 最小窗口大小：写死到系统层（等同 C# 的 MinimumSize），拖动时由系统钳制，不产生回弹
-# pygame 的 get_wm_info()['window'] 是 HWND，拿不到 SDL_Window*，
-# 故用 Windows 原生机制：子类化窗口过程拦截 WM_GETMINMAXINFO
-
-_wndproc_cb = None  # 保持回调引用，防止被 GC
+_wndproc_cb = None
 
 class _MINMAXINFO(ctypes.Structure):
     _fields_ = [("ptReserved", wintypes.POINT),
@@ -79,6 +75,7 @@ config.state.ZoneList = [[[] for b in range(config.state.SubChunkSize * config.s
                   for c in range(config.state.ChunkSize * config.state.ChunkSize)]
 config.state.PromptList = []
 config.state.ChunkOrder = list(range(config.state.ChunkSize * config.state.ChunkSize))
+config.state.PendingTickList = [config.PendingTickQueue() for _ in config.state.ChunkOrder]
 config.state.BlockOrder = list(range(config.state.SubChunkSize * config.state.SubChunkSize))
 simulation.createbarrier(config.state.ChunkList)
 

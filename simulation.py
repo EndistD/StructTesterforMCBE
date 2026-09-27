@@ -5,65 +5,70 @@ import blocks
 
 
 def runonce():
-    # 打乱更新顺序
-    if config.state.tick % 10 == 0:
+    # S0 更新区块优先级
+    if config.state.tick % 20 == 0:          # 跨区块顺序
         random.shuffle(config.state.ChunkOrder)
-    random.shuffle(config.state.BlockOrder)
+    random.shuffle(config.state.BlockOrder)  # 区块内顺序
+
+    # 预热
+    if config.state.tick == 0:
+        redstonetick()
+
     config.state.tick += 1
+    is_rt = config.state.tick % 2 == 1
 
-    # 遍历区域
-    for chu in [config.state.ZoneList[x1] for x1 in config.state.ChunkOrder]:
-        for blks in [chu[x2] for x2 in config.state.BlockOrder]:
+    # 区块更新
+    for chunkid in config.state.ChunkOrder:
+        # 计划刻
+        config.state.PendingTickList[chunkid].update()
+        # 区域
+        for blks in [config.state.ZoneList[chunkid][x2] for x2 in config.state.BlockOrder]:
             for zons in blks:
-                zons.function()
+                if not zons.is_redstone:
+                    zons.function()
+        # 方块功能
+        for blks in [config.state.ChunkList[chunkid][x2] for x2 in config.state.BlockOrder]:
+            if blks.has_function:
+                blks.function()
 
+    # 红石刻
+    if is_rt:
+        redstonetick()
+
+
+def redstonetick():
     # 充能重置
     for chu in [config.state.ChunkList[x1] for x1 in config.state.ChunkOrder]:
         for blks in [chu[x2] for x2 in config.state.BlockOrder]:
             blks.actived = False
             blks.powered = False
-
-    # 充能执行
+    # 区域充能
+    for chu in [config.state.ZoneList[x1] for x1 in config.state.ChunkOrder]:
+        for blks in [chu[x2] for x2 in config.state.BlockOrder]:
+            for zons in blks:
+                if zons.is_redstone:
+                    zons.function()
+    # 方块充能
     for chu in [config.state.ChunkList[x1] for x1 in config.state.ChunkOrder]:
         for blks in [chu[x2] for x2 in config.state.BlockOrder]:
-            # 能量源充能
-            if blks.has_generate == True:
+            if blks.has_generate:
                 blks.generate()
-            # 区域充能
-            if blks.zone_powered == True and blks.can_powered == True and blks.moving_time == 0:
+            if blks.zone_powered and blks.can_powered and blks.is_moving == 0:
                 blks.powered = True
-            elif blks.zone_powered == True and blks.can_powered != True and blks.has_function == True and blks.moving_time == 0:
+            elif blks.zone_powered and blks.can_powered != True and blks.has_function and blks.is_moving == 0:
                 blks.actived = True
-
+    # 3c 激活传播
     for chu in [config.state.ChunkList[x1] for x1 in config.state.ChunkOrder]:
         for blks in [chu[x2] for x2 in config.state.BlockOrder]:
-            # 激活
-            if blks.powered == True and blks.moving_time == 0:
-                if blks.has_function == True:
+            if blks.powered and blks.is_moving == 0:
+                if blks.has_function:
                     blks.actived = True
                 for towards in range(4):
-                    if (config.state.ChunkList[fun.bturnid(blks.abpos, 1, towards)[0]][
-                            fun.bturnid(blks.abpos, 1, towards)[1]].has_function == True
-                        and config.state.ChunkList[fun.bturnid(blks.abpos, 1, towards)[0]][
-                            fun.bturnid(blks.abpos, 1, towards)[1]].moving_time == 0) \
-                            and not (config.state.ChunkList[fun.bturnid(blks.abpos, 1, towards)[0]][
-                                         fun.bturnid(blks.abpos, 1, towards)[1]].target_generate
-                                     and config.state.ChunkList[fun.bturnid(blks.abpos, 1, towards)[0]][
-                                         fun.bturnid(blks.abpos, 1, towards)[1]].towards == fun.reverse(towards)):
-                        config.state.ChunkList[fun.bturnid(blks.abpos, 1, towards)[0]][
-                            fun.bturnid(blks.abpos, 1, towards)[1]].actived = True
-
-    # 侦测器记录
-    for chu in [config.state.ChunkList[x1] for x1 in config.state.ChunkOrder]:
-        for blks in [chu[x2] for x2 in config.state.BlockOrder]:
-            if type(blks) == blocks.Obsever:
-                blks.check()
-
-    # 功能执行
-    for chu in [config.state.ChunkList[x1] for x1 in config.state.ChunkOrder]:
-        for blks in [chu[x2] for x2 in config.state.BlockOrder]:
-            if blks.has_function == True:
-                blks.function()
+                    npos = config.state.ChunkList[fun.bturnid(blks.abpos, 1, towards)[0]][
+                        fun.bturnid(blks.abpos, 1, towards)[1]]
+                    if (npos.has_function and npos.is_moving == 0
+                            and not (npos.target_generate and npos.towards == fun.reverse(towards))):
+                        npos.actived = True
 
 
 def createbarrier(chunklist):

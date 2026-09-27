@@ -275,6 +275,7 @@ class Start(Functional):
     icon_shift = 0
     icon_pause = 0
     icon_reset = 0
+    icon_redplan = 0
     ticktext = None
     text = None
 
@@ -291,6 +292,8 @@ class Start(Functional):
                                              (config.state.MenuWidth * 1.2 / 6, config.state.MenuWidth * 1.2 / 6))
         self.icon_reset = pg.transform.scale(pg.image.load(config.resource_path("files/gui/reset.png")).convert_alpha(),
                                              (config.state.MenuWidth * 1.2 / 6, config.state.MenuWidth * 1.2 / 6))
+        self.icon_redplan = pg.transform.scale(pg.image.load(config.resource_path("files/icon/redplan.png")).convert_alpha(),
+                                               (config.state.MenuWidth * 0.45 / 6, config.state.MenuWidth * 0.45 / 6))
         import blocks
         self.save = [[blocks.Air(fun.cidturnc(c), fun.bidturnub(b)) for b in range(config.state.SubChunkSize * config.state.SubChunkSize)] for c in
                      range(config.state.ChunkSize * config.state.ChunkSize)]
@@ -311,6 +314,10 @@ class Start(Functional):
         self.text = config.state.Text.render(label, False, "Grey", )
         window.blit(self.text,
                     (self.box.left + config.state.MenuWidth * 1 / 6, self.box.top + config.state.MenuWidth * 0.14 / 6))
+        if config.state.tick % 2 == 1:
+            window.blit(self.icon_redplan, (self.box.left + config.state.MenuWidth * 1 / 6 + self.text.get_width()
+                                            + config.state.MenuWidth * 0.08 / 6,
+                                            self.box.top + config.state.MenuWidth * 0.08 / 6))
     def execute(self):
         import blocks
         config.state.Trigger = blocks.Void
@@ -641,13 +648,22 @@ class ZoneGUI(GUI):
 class RedplanGUI(ZoneGUI):
     @staticmethod
     def _parse_command(text, clock):
+        fl = lambda n: n if n == 0 or n % 2 == 1 else n - 1  # 偶数向下取整为最近较小奇数，0 不变
         ans = []
         for part in text.split():
             nums = [num for num in part.split("-") if num.isdigit()]
             if len(nums) == 1:
-                ans.append((int(nums[0]), int(nums[0]) + 1))
+                n = int(nums[0])
+                a = 0 if n == 0 else fl(n)     # 起点：0 不改；否则向下取奇数
+                b = 1 if n == 0 else a + 2     # 终点：扩展到下一个奇数
+                ans.append((a, b))
             elif len(nums) == 2:
-                ans.append((int(nums[0]), int(nums[1])))
+                a = fl(int(nums[0]))
+                b = int(nums[1])
+                # 终点：等于周期时原样保留(以支持跨周期)，否则向下取奇数
+                if b != clock:
+                    b = fl(b)
+                ans.append((a, b))
             else:
                 return [], False
         for a, b in ans:
@@ -684,7 +700,8 @@ class RedplanGUI(ZoneGUI):
         def redcfunction(self):
             text2 = self.fathergui.clocktextbut.textsaved
             clock_ok = text2.isdigit()
-            clock_val = int(text2) if clock_ok else 0
+            fl = lambda n: n if n == 0 or n % 2 == 1 else n - 1  # 周期同样向下取整为奇数
+            clock_val = fl(int(text2)) if clock_ok else 0
             ans, cmd_ok = RedplanGUI._parse_command(
                 self.fathergui.commandtextbut.textsaved, clock_val if clock_ok else 0)
             if cmd_ok:
@@ -706,13 +723,22 @@ class RedplanGUI(ZoneGUI):
 class MovingplanGUI(ZoneGUI):
     @staticmethod
     def _parse_command(text, clock):
+        fl = lambda n: n if n == 0 or n % 2 == 1 else n - 1  # 偶数向下取整为最近较小奇数，0 不变
         ans = []
         for part in text.split():
             nums = [num for num in part.split("-") if num.isdigit()]
             if len(nums) == 1:
-                ans.append((int(nums[0]), int(nums[0]) + 1))
+                n = int(nums[0])
+                a = 0 if n == 0 else fl(n)     # 起点：0 不改；否则向下取奇数
+                b = 1 if n == 0 else a + 2     # 终点：扩展到下一个奇数
+                ans.append((a, b))
             elif len(nums) == 2:
-                ans.append((int(nums[0]), int(nums[1])))
+                a = fl(int(nums[0]))
+                b = int(nums[1])
+                # 终点：等于周期时原样保留(以支持跨周期)，否则向下取奇数
+                if b != clock:
+                    b = fl(b)
+                ans.append((a, b))
             else:
                 return [], False
         for a, b in ans:
@@ -749,7 +775,8 @@ class MovingplanGUI(ZoneGUI):
         def movecfunction(self):
             text2 = self.fathergui.clocktextbut.textsaved
             clock_ok = text2.isdigit()
-            clock_val = int(text2) if clock_ok else 0
+            fl = lambda n: n if n == 0 or n % 2 == 1 else n - 1  # 周期同样向下取整为奇数
+            clock_val = fl(int(text2)) if clock_ok else 0
             ans, cmd_ok = MovingplanGUI._parse_command(
                 self.fathergui.commandtextbut.textsaved, clock_val if clock_ok else 0)
             if cmd_ok:
@@ -1109,7 +1136,7 @@ class PopupGUI(GUI):
             [int(pos[0] + size[0] * 0.6), btn_y], self, [btn_w, btn_h], "确认")
 
     def move(self, PreSsizes, Ssizes):
-        # 弹窗大小固定（基于默认窗口计算），仅位置跟随当前窗口居中
+        # 大小固定
         w, h = self.size
         new_pos = [int((Ssizes[0] - w) / 2), int((Ssizes[1] - h) / 2)]
         dx = new_pos[0] - self.pos[0]
@@ -1117,7 +1144,6 @@ class PopupGUI(GUI):
         self.pos = new_pos
         self.box.left = new_pos[0]
         self.box.top = new_pos[1]
-        # 子元素整体平移（相对弹窗的偏移不变）
         for but in self.guibuttonlist:
             but.pos[0] += dx
             but.pos[1] += dy
@@ -1127,7 +1153,6 @@ def show_popup(message, on_confirm, subtitle=""):
     for g in config.state.GUIList:
         if isinstance(g, PopupGUI) and g.active:
             return
-    # 弹窗大小固定为默认窗口下的值（432×144），不随当前窗口缩放变化；位置仍按当前窗口居中
     w = int(config.state.DefaultSsize[0] * 0.4)
     h = int(config.state.DefaultSsize[1] * 0.2)
     popup = PopupGUI(
@@ -1216,14 +1241,15 @@ settingsgui.exitbut.box.top = settingsgui.exitbut.pos[1]
 
 #帮助文本
 red_help = (
-    "红石区域语法\n"
-    "可键入数字与短横杠\'-\'\n"
-    "输入n :在 tick n 激活, n+1 结束, 自动整理为 n-n+1 \n"
-    "a-b - 在 tick a 激活, b 结束\n"
+    "帮助 :\n"
+    "区域的激活时间可自由配置, 允许键入数字与短横杠\'-\'\n"
+    "若可能,配置输入会向下取整到红石刻(奇数)\'-\'\n"
+    "输入n : 在 tick n 开始激活, n+2 终止激活\n"
+    "输入a-b : 在 tick a 开始激活, b 终止激活\n"
     "当周期设置为0时, 不循环\n"
-    "当周期非0时, 将tick / 周期的余数视为当前tick数\n"
-    "例：周期=5 配置= 0 2-4 → 在 tick0 激活,\n"
-    "  tick1 取消, tick2 激活, tick4 取消\n"
+    "当周期设置非0时, 将tick / 周期的余数视为当前tick数实现循环\n"
+    "例：周期=20 配置= 0 5-10 → 自动整理为 0-1 5-9 \n"
+    "在 tick0 激活, tick1 取消, tick2 激活, tick4 取消\n"
 )
 add_help_button(red, red_help)
 add_help_button(grow)
@@ -1246,7 +1272,7 @@ def guisrect(guilist,mpos):
     if modal_guis:
         top = max(modal_guis, key=lambda g: g.priority)
         return top if top.box.collidepoint(mpos) else None
-    #返回鼠标位置处优先级最高的GUI
+    #返回鼠标位置处优先级最高的gui
     top_gui = None
     for gui in active_guis:
         if gui.box.collidepoint(mpos):
