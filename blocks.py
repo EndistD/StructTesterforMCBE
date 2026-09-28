@@ -331,12 +331,125 @@ class AndesiteCasing(Solid):
         self.nearbyupdate()
 
 def refresh_connected_casings():
-    # 整张地图加载完成后统一刷新安山机壳连接贴图
     for chunk in config.state.ChunkList:
         for blk in chunk:
             if isinstance(blk, AndesiteCasing):
                 blk.updateimage()
-
+class Concrete(Block):
+    hidden = False
+    imageway = config.resource_path("files/blocks/white_concrete.png")
+    iconway = config.resource_path("files/icon/white_concrete.png")
+    image = pg.image.load(imageway)
+    image_load = image
+    icon = pg.transform.scale(pg.image.load(iconway).convert_alpha(),
+                               (config.state.MenuWidth * 0.9 / 6, config.state.MenuWidth * 0.9 / 6))
+class ConcrateWhite(Concrete):
+    pass
+class ConcrateOrange(Concrete):
+    imageway = config.resource_path("files/blocks/orange_concrete.png")
+    iconway = config.resource_path("files/icon/orange_concrete.png")
+    image = pg.image.load(imageway)
+    image_load = image
+    icon = pg.transform.scale(pg.image.load(iconway).convert_alpha(),
+                               (config.state.MenuWidth * 0.9 / 6, config.state.MenuWidth * 0.9 / 6))
+class ConcrateMagenta(Concrete):
+    imageway = config.resource_path("files/blocks/magenta_concrete.png")
+    iconway = config.resource_path("files/icon/magenta_concrete.png")
+    image = pg.image.load(imageway)
+    image_load = image
+    icon = pg.transform.scale(pg.image.load(iconway).convert_alpha(),
+                               (config.state.MenuWidth * 0.9 / 6, config.state.MenuWidth * 0.9 / 6))
+class ConcrateLightBlue(Concrete):
+    imageway = config.resource_path("files/blocks/light_blue_concrete.png")
+    iconway = config.resource_path("files/icon/light_blue_concrete.png")
+    image = pg.image.load(imageway)
+    image_load = image
+    icon = pg.transform.scale(pg.image.load(iconway).convert_alpha(),
+                               (config.state.MenuWidth * 0.9 / 6, config.state.MenuWidth * 0.9 / 6))
+class ConcrateYellow(Concrete):
+    imageway = config.resource_path("files/blocks/yellow_concrete.png")
+    iconway = config.resource_path("files/icon/yellow_concrete.png")
+    image = pg.image.load(imageway)
+    image_load = image
+    icon = pg.transform.scale(pg.image.load(iconway).convert_alpha(),
+                               (config.state.MenuWidth * 0.9 / 6, config.state.MenuWidth * 0.9 / 6))
+class ConcrateLime(Concrete):
+    imageway = config.resource_path("files/blocks/lime_concrete.png")
+    iconway = config.resource_path("files/icon/lime_concrete.png")
+    image = pg.image.load(imageway)
+    image_load = image
+    icon = pg.transform.scale(pg.image.load(iconway).convert_alpha(),
+                               (config.state.MenuWidth * 0.9 / 6, config.state.MenuWidth * 0.9 / 6))
+class ConcratePink(Concrete):
+    imageway = config.resource_path("files/blocks/pink_concrete.png")
+    iconway = config.resource_path("files/icon/pink_concrete.png")
+    image = pg.image.load(imageway)
+    image_load = image
+    icon = pg.transform.scale(pg.image.load(iconway).convert_alpha(),
+                               (config.state.MenuWidth * 0.9 / 6, config.state.MenuWidth * 0.9 / 6))
+class ConcrateGray(Concrete):
+    imageway = config.resource_path("files/blocks/gray_concrete.png")
+    iconway = config.resource_path("files/icon/gray_concrete.png")
+    image = pg.image.load(imageway)
+    image_load = image
+    icon = pg.transform.scale(pg.image.load(iconway).convert_alpha(),
+                               (config.state.MenuWidth * 0.9 / 6, config.state.MenuWidth * 0.9 / 6))
+class ConcrateLightGray(Concrete):
+    imageway = config.resource_path("files/blocks/light_gray_concrete.png")
+    iconway = config.resource_path("files/icon/light_gray_concrete.png")
+    image = pg.image.load(imageway)
+    image_load = image
+    icon = pg.transform.scale(pg.image.load(iconway).convert_alpha(),
+                               (config.state.MenuWidth * 0.9 / 6, config.state.MenuWidth * 0.9 / 6))
+class ConcrateCyan(Concrete):
+    imageway = config.resource_path("files/blocks/cyan_concrete.png")
+    iconway = config.resource_path("files/icon/cyan_concrete.png")
+    image = pg.image.load(imageway)
+    image_load = image
+    icon = pg.transform.scale(pg.image.load(iconway).convert_alpha(),
+                               (config.state.MenuWidth * 0.9 / 6, config.state.MenuWidth * 0.9 / 6))
+class ConcratePurple(Concrete):
+    imageway = config.resource_path("files/blocks/purple_concrete.png")
+    iconway = config.resource_path("files/icon/purple_concrete.png")
+    image = pg.image.load(imageway)
+    image_load = image
+    icon = pg.transform.scale(pg.image.load(iconway).convert_alpha(),
+                               (config.state.MenuWidth * 0.9 / 6, config.state.MenuWidth * 0.9 / 6))
+class ConcrateBlue(Concrete):
+    imageway = config.resource_path("files/blocks/blue_concrete.png")
+    iconway = config.resource_path("files/icon/blue_concrete.png")
+    image = pg.image.load(imageway)
+    image_load = image
+    icon = pg.transform.scale(pg.image.load(iconway).convert_alpha(),
+                               (config.state.MenuWidth * 0.9 / 6, config.state.MenuWidth * 0.9 / 6))
+class ConcrateBrown(Concrete):
+    imageway = config.resource_path("files/blocks/brown_concrete.png")
+    iconway = config.resource_path("files/icon/brown_concrete.png")
+    image = pg.image.load(imageway)
+    image_load = image
+    icon = pg.transform.scale(pg.image.load(iconway).convert_alpha(),
+                               (config.state.MenuWidth * 0.9 / 6, config.state.MenuWidth * 0.9 / 6))
+class ConcrateGreen(Concrete):
+    imageway = config.resource_path("files/blocks/green_concrete.png")
+    iconway = config.resource_path("files/icon/green_concrete.png")
+    image = pg.image.load(imageway)
+    image_load = image
+    icon = pg.transform.scale(pg.image.load(iconway).convert_alpha(),
+                               (config.state.MenuWidth * 0.9 / 6, config.state.MenuWidth * 0.9 / 6))
+class ConcrateRed(Concrete):
+    imageway = config.resource_path("files/blocks/red_concrete.png")
+    iconway = config.resource_path("files/icon/red_concrete.png")
+    image = pg.image.load(imageway)
+    image_load = image
+    icon = pg.transform.scale(pg.image.load(iconway).convert_alpha(),
+                               (config.state.MenuWidth * 0.9 / 6, config.state.MenuWidth * 0.9 / 6))
+class ConcrateBlack(Concrete):
+    imageway = config.resource_path("files/blocks/black_concrete.png")
+    iconway = config.resource_path("files/icon/black_concrete.png")
+    image = pg.image.load(imageway)
+    image_load = image
+    icon = pg.transform.scale(pg.image.load(iconway).convert_alpha(),
+                               (config.state.MenuWidth * 0.9 / 6, config.state.MenuWidth * 0.9 / 6))
 class Log(Block):
     hidden = False
     imageway = config.resource_path("files/blocks/oak.png")
