@@ -8,15 +8,15 @@ import effects
 class Block:
     is_zone = False
     # 空间
-    cpos = [0, 0]  # 区块坐标，右上角开始
-    bpos = [0, 0]  # 方块坐标，右上角开始，相对坐标
-    abpos = fun.idturnb(fun.cturncid(cpos), fun.ubturnbid(bpos))  # 方块坐标，右上角开始，绝对坐标
-    can_rotate = False  # 可以旋转
-    can_rotate_byhand = False  # 可以手动旋转
+    cpos = [0, 0]  # 区块坐标
+    bpos = [0, 0]  # 方块坐标相对坐标
+    abpos = fun.idturnb(fun.cturncid(cpos), fun.ubturnbid(bpos))  # 方块绝对坐标
+    can_rotate = False  # 可旋转
+    can_rotate_byhand = False  # 可手动旋转
     towards = 0  # 朝向，北0东1南2西3
     # 属性
     powered = False  # 被充能
-    is_moving = 0  # 移动状态（非0即1，0静止 1移动中）
+    is_moving = 0  # 移动状态
     actived = False  # 被激活
     zone_powered = False  # 区域提供的充能
     special = 0  # 特殊值
@@ -48,7 +48,7 @@ class Block:
     image_moving_load = image_moving
     icon = pg.transform.scale(pg.image.load(iconway).convert_alpha(),(config.state.MenuWidth * 0.9 / 6, config.state.MenuWidth * 0.9 / 6))
 
-    # 缓存（主纹理与 moving 叠加纹理各自独立，避免一方重算污染另一方的判断）
+    # 缓存
     _last_zoom = None
     _last_towards = None
     _last_image = None
@@ -120,17 +120,26 @@ class Block:
         match mode:
             case "normal":
                 if type(config.state.ChunkList[fun.cturncid(self.cpos)][fun.ubturnbid(self.bpos)]) == Air:
-                    config.state.ChunkList[fun.cturncid(self.cpos)][fun.ubturnbid(self.bpos)] = trigger(self.cpos, self.bpos, toward)
+                    newobj = trigger(self.cpos, self.bpos, toward)
+                    config.state.ChunkList[fun.cturncid(self.cpos)][fun.ubturnbid(self.bpos)] = newobj
                     self.notify_neighbors()
+                    newobj.after_set()
             case "strong":
-                config.state.ChunkList[fun.cturncid(self.cpos)][fun.ubturnbid(self.bpos)] = trigger(self.cpos, self.bpos, toward)
+                newobj = trigger(self.cpos, self.bpos, toward)
+                config.state.ChunkList[fun.cturncid(self.cpos)][fun.ubturnbid(self.bpos)] = newobj
                 self.notify_neighbors()
+                newobj.after_set()
             case "grow":
                 if config.state.ChunkList[fun.cturncid(self.cpos)][fun.ubturnbid(self.bpos)].grow_destoryed:
-                    config.state.ChunkList[fun.cturncid(self.cpos)][fun.ubturnbid(self.bpos)] = trigger(self.cpos, self.bpos, toward)
+                    newobj = trigger(self.cpos, self.bpos, toward)
+                    config.state.ChunkList[fun.cturncid(self.cpos)][fun.ubturnbid(self.bpos)] = newobj
                     self.notify_neighbors()
+                    newobj.after_set()
             case _:
                 pass
+
+    def after_set(self):
+        pass
 
     def remove(self):
         if type(config.state.ChunkList[fun.cturncid(self.cpos)][fun.ubturnbid(self.bpos)]) != Air and type(
@@ -139,21 +148,16 @@ class Block:
             config.state.ChunkList[fun.cturncid(self.cpos)][fun.ubturnbid(self.bpos)] = Air(self.cpos, self.bpos)
 
     def neighborchanged(self, towards):
-        """相邻方块变化时被调用。towards 为变化邻位相对本方块的方向(0上 1右 2下 3左)。"""
         pass
 
     def is_alive(self):
-        """该实例是否仍处世界中：所在格是否仍指向它。
-        被破坏/替换/移动后返回 False，计划刻据此销毁不执行。"""
         return fun.bturnblock(self.abpos) is self
 
     def notify_neighbors(self):
-        """自身所在位置发生变化后，向上/右/下/左(0123)相邻方块广播 neighborchanged。"""
         for twd in (0, 1, 2, 3):
             fun.bturnblock(fun.bposmove(self.abpos, twd)).neighborchanged(twd)
 
     def bemoved(self):
-        """被活塞等推动/安置时调用的钩子（is_moving 被置 1 的瞬间）。子类可覆写。"""
         pass
 
     def rotate(self):
@@ -209,6 +213,130 @@ class Brick(Solid):
     image_load = image
     icon = pg.transform.scale(pg.image.load(iconway).convert_alpha(),
                                (config.state.MenuWidth * 0.9 / 6, config.state.MenuWidth * 0.9 / 6))
+class StoneBrick(Solid):
+    imageway = config.resource_path("files/blocks/stone_brick.png")
+    iconway = config.resource_path("files/icon/stone_brick.png")
+    image = pg.image.load(imageway)
+    image_load = image
+    icon = pg.transform.scale(pg.image.load(iconway).convert_alpha(),
+                               (config.state.MenuWidth * 0.9 / 6, config.state.MenuWidth * 0.9 / 6))
+class PolishedAndesite(Solid):
+    imageway = config.resource_path("files/blocks/polished_andesite.png")
+    iconway = config.resource_path("files/icon/polished_andesite.png")
+    image = pg.image.load(imageway)
+    image_load = image
+    icon = pg.transform.scale(pg.image.load(iconway).convert_alpha(),
+                               (config.state.MenuWidth * 0.9 / 6, config.state.MenuWidth * 0.9 / 6))
+class PolishedDeepslate(Solid):
+    imageway = config.resource_path("files/blocks/polished_deepslate.png")
+    iconway = config.resource_path("files/icon/polished_deepslate.png")
+    image = pg.image.load(imageway)
+    image_load = image
+    icon = pg.transform.scale(pg.image.load(iconway).convert_alpha(),
+                               (config.state.MenuWidth * 0.9 / 6, config.state.MenuWidth * 0.9 / 6))
+class EndBrick(Solid):
+    imageway = config.resource_path("files/blocks/end_stone_brick.png")
+    iconway = config.resource_path("files/icon/end_stone_brick.png")
+    image = pg.image.load(imageway)
+    image_load = image
+    icon = pg.transform.scale(pg.image.load(iconway).convert_alpha(),
+                               (config.state.MenuWidth * 0.9 / 6, config.state.MenuWidth * 0.9 / 6))
+class CutCopper(Solid):
+    imageway = config.resource_path("files/blocks/cut_copper.png")
+    iconway = config.resource_path("files/icon/cut_copper.png")
+    image = pg.image.load(imageway)
+    image_load = image
+    icon = pg.transform.scale(pg.image.load(iconway).convert_alpha(),
+                               (config.state.MenuWidth * 0.9 / 6, config.state.MenuWidth * 0.9 / 6))
+class Purpur(Solid):
+    imageway = config.resource_path("files/blocks/purpur_block.png")
+    iconway = config.resource_path("files/icon/purpur_block.png")
+    image = pg.image.load(imageway)
+    image_load = image
+    icon = pg.transform.scale(pg.image.load(iconway).convert_alpha(),
+                               (config.state.MenuWidth * 0.9 / 6, config.state.MenuWidth * 0.9 / 6))
+class Quartz(Solid):
+    imageway = config.resource_path("files/blocks/quartz_block.png")
+    iconway = config.resource_path("files/icon/quartz_block.png")
+    image = pg.image.load(imageway)
+    image_load = image
+    icon = pg.transform.scale(pg.image.load(iconway).convert_alpha(),
+                               (config.state.MenuWidth * 0.9 / 6, config.state.MenuWidth * 0.9 / 6))
+class AndesiteCasing(Solid):
+    imageway = config.resource_path("files/blocks/andesite_casing.png")
+    iconway = config.resource_path("files/icon/andesite_casing.png")
+    imageset = pg.image.load(imageway).convert_alpha()
+    imagemap = None
+    image = imageset.subsurface((0, 0, 16, 16))
+    image_load = image
+    icon = pg.transform.scale(pg.image.load(iconway).convert_alpha(),
+                               (config.state.MenuWidth * 0.9 / 6, config.state.MenuWidth * 0.9 / 6))
+
+    @classmethod
+    def createmap(cls):
+        if cls.imagemap is None:
+            def compress(i):
+                N  = (i >> 0) & 1; NE = (i >> 1) & 1; E = (i >> 2) & 1; SE = (i >> 3) & 1
+                S  = (i >> 4) & 1; SW = (i >> 5) & 1; W = (i >> 6) & 1; NW = (i >> 7) & 1
+                # 压缩：角位两侧两条边不全为1则清零
+                NE = NE and N and E
+                SE = SE and E and S
+                SW = SW and S and W
+                NW = NW and W and N
+                return N | (NE << 1) | (E << 2) | (SE << 3) | (S << 4) | (SW << 5) | (W << 6) | (NW << 7)
+            codes = sorted({compress(i) for i in range(256)})
+            cls.imagemap = {c: idx for idx, c in enumerate(codes)}
+        return cls.imagemap
+
+    def updateimage(self):
+        x, y = self.abpos
+        b = fun.bturnblock
+        same = lambda p: isinstance(b(p), AndesiteCasing)
+        N  = same([x,   y - 1]); NE = same([x + 1, y - 1])
+        E  = same([x + 1, y   ]); SE = same([x + 1, y + 1])
+        S  = same([x,   y + 1]); SW = same([x - 1, y + 1])
+        W  = same([x - 1, y   ]); NW = same([x - 1, y - 1])
+        # 编码：正上N为最低位，顺时针绕一圈，左上NW为最高位；角位做压缩
+        code = (N << 0) | ((NE and N and E) << 1) | (E << 2) | ((SE and E and S) << 3) \
+             | (S << 4) | ((SW and S and W) << 5) | (W << 6) | ((NW and W and N) << 7)
+        idx = self.createmap()[code]                    # 0..46
+        tx, ty = (idx % 8) * 16, (idx // 8) * 16
+        self.image = AndesiteCasing.imageset.subsurface((tx, ty, 16, 16))
+        self.image_load = self.image
+
+    def nearbyupdate(self):
+        blk = fun.bturnblock(self.abpos)
+        if isinstance(blk, AndesiteCasing):
+            blk.updateimage()
+        x, y = self.abpos
+        for dx in (-1, 0, 1):
+            for dy in (-1, 0, 1):
+                if dx == 0 and dy == 0:
+                    continue
+                around = fun.bturnblock([x + dx, y + dy])
+                if isinstance(around, AndesiteCasing):
+                    around.updateimage()
+
+    def after_set(self):
+        self.nearbyupdate()
+
+    def bemoved(self):
+        self.nearbyupdate()
+
+    def neighborchanged(self, towards):
+        self.nearbyupdate()
+
+    def remove(self):
+        super().remove()
+        self.nearbyupdate()
+
+def refresh_connected_casings():
+    # 整张地图加载完成后统一刷新安山机壳连接贴图
+    for chunk in config.state.ChunkList:
+        for blk in chunk:
+            if isinstance(blk, AndesiteCasing):
+                blk.updateimage()
+
 class Log(Block):
     hidden = False
     imageway = config.resource_path("files/blocks/oak.png")
@@ -477,7 +605,6 @@ class Redstone(Block):
 class RedstoneLamp(Block):
     hidden = False
     has_function = True
-    _off_scheduled = False   # 是否有进行中(待熄灭)的计划刻
     image1way = config.resource_path("files/blocks/redstone_lamp.png")
     image2way = config.resource_path("files/blocks/redstone_lamp_on.png")
     iconway = config.resource_path("files/icon/redstone_lamp.png")
@@ -496,20 +623,57 @@ class RedstoneLamp(Block):
                 self.image = pg.image.load(self.imageway)
                 self.special = 1
                 self.notify_neighbors()
-            self._off_scheduled = False
         else:
-            if self.imageway == self.image2way and not self._off_scheduled:
-                self._off_scheduled = True
+            if self.imageway == self.image2way and not config.state.PendingTickList[
+                    fun.cturncid(self.cpos)].has_pending(self):
                 config.state.PendingTickList[fun.cturncid(self.cpos)].schedule(3, self, self.turn_off)
 
     def turn_off(self):
-        self._off_scheduled = False
         if self.actived:
             return
         if self.imageway == self.image2way:
             self.imageway = self.image1way
             self.image = pg.image.load(self.imageway)
             self.special = 0
+            self.notify_neighbors()
+class CopperBulb(Block):
+    hidden = False
+    has_function = True
+    image1way = config.resource_path("files/blocks/copper_bulb.png")
+    image2way = config.resource_path("files/blocks/copper_bulb_on_powered.png")
+    image3way = config.resource_path("files/blocks/copper_bulb_powered.png")
+    image4way = config.resource_path("files/blocks/copper_bulb_on.png")
+    iconway = config.resource_path("files/icon/copper_bulb.png")
+    special = 0
+    imageway = image1way
+    image = pg.image.load(imageway)
+    image_load = image
+    icon = pg.transform.scale(pg.image.load(iconway).convert_alpha(),
+                               (config.state.MenuWidth * 0.9 / 6, config.state.MenuWidth * 0.9 / 6))
+
+    def function(self):
+        if self.is_moving != 0:
+            return
+        if self.actived:
+            if self.special not in (1, 2):
+                q = config.state.PendingTickList[fun.cturncid(self.cpos)]
+                if not q.has_pending(self):
+                    q.schedule(1, self, self.change)
+        else:
+            if config.state.tick % 2 == 1 and self.special in (1, 2):
+                self.special = 3 if self.special % 2 == 1 else 0
+                self.imagechange()
+
+    def imagechange(self):
+        images = (self.image1way, self.image2way, self.image3way, self.image4way)
+        self.imageway = images[self.special]
+        self.image = pg.image.load(self.imageway)
+        self.image_load = self.image
+
+    def change(self):
+        if self.actived:
+            self.special = 1 if self.special % 2 == 0 else 2
+            self.imagechange()
             self.notify_neighbors()
 class Piston(Block):
     can_powered = False
@@ -907,7 +1071,7 @@ class Obsever(Block):
 
     def __init__(self, cpos, bpos, towards=0, mode="double", abpos=0):
         super().__init__(cpos, bpos, towards, mode, abpos)
-        self.state = 0  # 2态状态机：0关闭(普通方块) 1激活(向输出端强充能)
+        self.state = 0
 
     image1way = config.resource_path("files/blocks/observer.png")
     image2way = config.resource_path("files/blocks/actived_observer.png")
@@ -930,9 +1094,8 @@ class Obsever(Block):
         return config.state.PendingTickList[fun.cturncid(self.cpos)]
 
     def _maybe_schedule(self, delay, cb, strict=True):
-        """strict=True：外部来源(nc/被推)，连同正在执行的计划刻一并统计，防重复添加；
-        strict=False：计划刻内部续接，只看堆，允许紧接着挂下一个计划刻。"""
-        if not self._q().has_owner(self, strict):
+
+        if not self._q().has_pending(self, strict):
             self._q().schedule(delay, self, cb)
 
     def neighborchanged(self, towards):
@@ -954,8 +1117,6 @@ class Obsever(Block):
         self._set_state(0)
 
     def generate(self):
-        """通用电源函数：仅按当前状态决定是否激活（与状态变化解耦）。
-        激活时向正前方强充能（限定方向的充能方块语义）。"""
         if self.is_moving != 0 or self.state == 0:
             return
         front = fun.bturnblock(fun.bposmove(self.abpos, self.towards))
@@ -965,7 +1126,6 @@ class Obsever(Block):
             front.actived = True
 
     def bemoved(self):
-        """被推动：清空全部计划刻并立即置为关。推动本身视为收到一次更新，直接挂 2gt 计划刻点火。"""
         self._q().cancel(self)
         self.state = 0
         self.imageway = self.image1way

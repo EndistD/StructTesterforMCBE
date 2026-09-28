@@ -48,7 +48,7 @@ class PendingTickQueue:
             if item.owner is owner:
                 item.cancelled = True
 
-    def has_owner(self, owner, strict=True):
+    def has_pending(self, owner, strict=True):
         """owner 是否已有未取消的未决计划刻。
         strict=True：外部来源（nc/被推）用，连同本次已弹出、正在执行的计划刻一起统计；
         strict=False：计划刻内部续接用，只看堆，从而允许自己紧接着添加下一个计划刻。"""

@@ -3,6 +3,7 @@ import pygame as pg
 import types
 import simulation
 import config
+import blocks
 import functions as fun
 
 class KeyBinding:
@@ -225,8 +226,14 @@ class BlockChoose(Button):
             else:
                 self.is_selected = False
     def execute(self):
-        config.state.Trigger = self.target
-        config.state.icrosshair = update_crosshair(config.state.Trigger)
+        # 具有次级菜单时选中子类第一个，避免选中主类本身
+        if self.has_sub and self.subbuttonlist:
+            first = self.subbuttonlist[0]
+            config.state.Trigger = first.target
+            config.state.icrosshair = update_crosshair(first.target)
+        else:
+            config.state.Trigger = self.target
+            config.state.icrosshair = update_crosshair(config.state.Trigger)
 class SubBlockChoose(BlockChoose):
     fatherbutton = None
     def __init__(self,pos,target,fatherbutton):
@@ -348,6 +355,7 @@ class Start(Functional):
             fun.reset_world()
             config.state.ChunkList = copy.deepcopy(self.save)
             config.state.ZoneList = copy.deepcopy(self.zonesave)
+            blocks.refresh_connected_casings()
             config.state.Vpos = old_vpos
             Vmax = config.state.Vsize
             config.state.Vpos[0] = max(0, min(config.state.Vpos[0], Vmax))
@@ -415,12 +423,28 @@ class Save(Functional):
                     fun.reset_world(saved_size)
                 config.state.ChunkList = copy.deepcopy(btn.save)
                 config.state.ZoneList = copy.deepcopy(btn.zonesave)
+                blocks.refresh_connected_casings()
                 # 恢复视角并做边界限制（0 ≤ Vpos ≤ Vsize）
                 config.state.Vpos = old_vpos
                 Vmax = config.state.Vsize
                 config.state.Vpos[0] = max(0, min(config.state.Vpos[0], Vmax))
                 config.state.Vpos[1] = max(0, min(config.state.Vpos[1], Vmax))
             show_popup(f"读取存档{slot}?", do_load, "你目前的工作将会丢失")
+
+def reset_simulation():
+    # 更改世界大小时：重置模拟时间、按钮状态与 Start 自动快照
+    # Save 存档(1-3)自带各自保存时的世界大小，读取时会自适应应用，故不清空
+    import blocks
+    config.state.tick = 0
+    config.state.simulating = False
+    for buts in config.state.buttonlist:
+        if isinstance(buts, Start):
+            buts.save = [[blocks.Air(fun.cidturnc(c), fun.bidturnub(u))
+                          for u in range(config.state.SubChunkSize * config.state.SubChunkSize)]
+                         for c in range(config.state.ChunkSize * config.state.ChunkSize)]
+            buts.zonesave = [[[] for _ in range(config.state.SubChunkSize * config.state.SubChunkSize)]
+                             for _ in range(config.state.ChunkSize * config.state.ChunkSize)]
+            buts.icon = buts.icon_normal
 class Setting(Functional):
     def __init__(self, pos, size):
         super().__init__(pos, size)
@@ -1091,6 +1115,7 @@ class SettingsGUI(GUI):
                     def on_reload():
                         config.state.Oneticktime = sp_val
                         fun.reset_world(cs_val)
+                        reset_simulation()
                         gui.active = False
                     show_popup("应用设置?", on_reload, "你目前的工作将会丢失")
                 elif sp_changed:
