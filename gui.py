@@ -226,7 +226,6 @@ class BlockChoose(Button):
             else:
                 self.is_selected = False
     def execute(self):
-        # 具有次级菜单时选中子类第一个，避免选中主类本身
         if self.has_sub and self.subbuttonlist:
             first = self.subbuttonlist[0]
             config.state.Trigger = first.target
@@ -349,10 +348,10 @@ class Start(Functional):
             simulation.runonce()
         else:
             config.state.simulating = False
-            # 回溯到 tick=0 时保留当前视角（reset_world 会重置 Vpos，故先备份再恢复）
+            # 保留视角
             old_vpos = list(config.state.Vpos)
             config.state.tick = 0
-            fun.reset_world()
+            simulation.reset_world()
             config.state.ChunkList = copy.deepcopy(self.save)
             config.state.ZoneList = copy.deepcopy(self.zonesave)
             blocks.refresh_connected_casings()
@@ -417,34 +416,20 @@ class Save(Functional):
             btn = self
             def do_load():
                 saved_size = int(len(btn.save) ** 0.5)
-                # 备份视角，载入后保留；若新地图变小导致视角越界则限制到边界
+                # 备份视角
                 old_vpos = list(config.state.Vpos)
                 if saved_size != config.state.ChunkSize:
-                    fun.reset_world(saved_size)
+                    simulation.reset_world(saved_size)
                 config.state.ChunkList = copy.deepcopy(btn.save)
                 config.state.ZoneList = copy.deepcopy(btn.zonesave)
                 blocks.refresh_connected_casings()
-                # 恢复视角并做边界限制（0 ≤ Vpos ≤ Vsize）
+                # 恢复视角
                 config.state.Vpos = old_vpos
                 Vmax = config.state.Vsize
                 config.state.Vpos[0] = max(0, min(config.state.Vpos[0], Vmax))
                 config.state.Vpos[1] = max(0, min(config.state.Vpos[1], Vmax))
             show_popup(f"读取存档{slot}?", do_load, "你目前的工作将会丢失")
 
-def reset_simulation():
-    # 更改世界大小时：重置模拟时间、按钮状态与 Start 自动快照
-    # Save 存档(1-3)自带各自保存时的世界大小，读取时会自适应应用，故不清空
-    import blocks
-    config.state.tick = 0
-    config.state.simulating = False
-    for buts in config.state.buttonlist:
-        if isinstance(buts, Start):
-            buts.save = [[blocks.Air(fun.cidturnc(c), fun.bidturnub(u))
-                          for u in range(config.state.SubChunkSize * config.state.SubChunkSize)]
-                         for c in range(config.state.ChunkSize * config.state.ChunkSize)]
-            buts.zonesave = [[[] for _ in range(config.state.SubChunkSize * config.state.SubChunkSize)]
-                             for _ in range(config.state.ChunkSize * config.state.ChunkSize)]
-            buts.icon = buts.icon_normal
 class Setting(Functional):
     def __init__(self, pos, size):
         super().__init__(pos, size)
@@ -672,19 +657,19 @@ class ZoneGUI(GUI):
 class RedplanGUI(ZoneGUI):
     @staticmethod
     def _parse_command(text, clock):
-        fl = lambda n: n if n == 0 or n % 2 == 1 else n - 1  # 偶数向下取整为最近较小奇数，0 不变
+        fl = lambda n: n if n == 0 or n % 2 == 1 else n - 1  # 向下取奇数
         ans = []
         for part in text.split():
             nums = [num for num in part.split("-") if num.isdigit()]
             if len(nums) == 1:
                 n = int(nums[0])
-                a = 0 if n == 0 else fl(n)     # 起点：0 不改；否则向下取奇数
-                b = 1 if n == 0 else a + 2     # 终点：扩展到下一个奇数
+                a = 0 if n == 0 else fl(n)
+                b = 1 if n == 0 else a + 2     # 扩展到下一个奇数
                 ans.append((a, b))
             elif len(nums) == 2:
                 a = fl(int(nums[0]))
                 b = int(nums[1])
-                # 终点：等于周期时原样保留(以支持跨周期)，否则向下取奇数
+                # 等于周期时原样保留，否则向下取奇数
                 if b != clock:
                     b = fl(b)
                 ans.append((a, b))
@@ -747,19 +732,18 @@ class RedplanGUI(ZoneGUI):
 class MovingplanGUI(ZoneGUI):
     @staticmethod
     def _parse_command(text, clock):
-        fl = lambda n: n if n == 0 or n % 2 == 1 else n - 1  # 偶数向下取整为最近较小奇数，0 不变
+        fl = lambda n: n if n == 0 or n % 2 == 1 else n - 1
         ans = []
         for part in text.split():
             nums = [num for num in part.split("-") if num.isdigit()]
             if len(nums) == 1:
                 n = int(nums[0])
-                a = 0 if n == 0 else fl(n)     # 起点：0 不改；否则向下取奇数
-                b = 1 if n == 0 else a + 2     # 终点：扩展到下一个奇数
+                a = 0 if n == 0 else fl(n)
+                b = 1 if n == 0 else a + 2
                 ans.append((a, b))
             elif len(nums) == 2:
                 a = fl(int(nums[0]))
                 b = int(nums[1])
-                # 终点：等于周期时原样保留(以支持跨周期)，否则向下取奇数
                 if b != clock:
                     b = fl(b)
                 ans.append((a, b))
@@ -1023,7 +1007,7 @@ class SettingsGUI(GUI):
         self.setting_text = TextShow(
             [pos[0] + size[0] * 0.155, pos[1] + size[1] * 0.03], self,
             [size[0] * 0.3, size[0] * 0.1],[25,25,25])
-        self.setting_text.textshow = "设置[未完成]"
+        self.setting_text.textshow = "设置"
 
         self.map_text = TextShow(
             [pos[0] + size[0] * 0.02, pos[1] + size[1] * 0.157], self,
@@ -1056,6 +1040,18 @@ class SettingsGUI(GUI):
             [pos[0] + size[0] * 0.038, pos[1] + size[1] * 0.357], self,
             [size[0] * 0.23, size[0] * 0.04], [100, 100, 100])
         self.speed_text.textshow = "模拟速度(ms)"
+        # 模拟粒度
+        self.unit_icon = ShowButton(
+            [pos[0] + size[0] * 0.25, pos[1] + size[1] * 0.40], self, icon_sz)
+        self.unit_icon.icon = pg.transform.smoothscale(
+                pg.image.load(config.resource_path("files/gui/clock.png")).convert_alpha(), icon_sz)
+        self.unit_switch = SwichButton(
+            [pos[0] + size[0] * 0.32, pos[1] + size[1] * 0.402], self, switch_sz)
+        self.unit_switch.dict = {1: "gt", 2: "rt"}
+        self.unit_text = TextShow(
+            [pos[0] + size[0] * 0.248, pos[1] + size[1] * 0.357], self,
+            [size[0] * 0.23, size[0] * 0.04], [100, 100, 100])
+        self.unit_text.textshow = "模拟粒度"
 
         self.show_text = TextShow(
             [pos[0] + size[0] * 0.02, pos[1] + size[1] * 0.457], self,
@@ -1085,7 +1081,6 @@ class SettingsGUI(GUI):
         def settings_confirm(self):
             gui = self.fathergui
             all_right = True
-            # 区块边长验证：纯数字且1~16
             cs_text = gui.chunksize_textin.textsaved
             if cs_text.isdigit() and 1 <= int(cs_text) <= 16:
                 gui.chunksize_textin.fontcolor = "white"
@@ -1105,6 +1100,7 @@ class SettingsGUI(GUI):
                 all_right = False
             if all_right:
                 config.state.show_background = (gui.bg_switch.locate == 1)
+                config.state.simulate_scale = gui.unit_switch.locate
 
                 cs_val = int(cs_text)
                 sp_val = int(sp_text)
@@ -1114,8 +1110,8 @@ class SettingsGUI(GUI):
                 if cs_changed:
                     def on_reload():
                         config.state.Oneticktime = sp_val
-                        fun.reset_world(cs_val)
-                        reset_simulation()
+                        simulation.reset_world(cs_val)
+                        simulation.reset_simulation()
                         gui.active = False
                     show_popup("应用设置?", on_reload, "你目前的工作将会丢失")
                 elif sp_changed:

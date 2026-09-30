@@ -8,25 +8,10 @@ import blocks
 import effects
 
 
-# 每刻墙钟时长：引导自 config.state.Oneticktime（引擎每 Oneticktime ms 推进一格），
-# 使特效渐消时长与真实激活时间一致。
-
-def _active_ticks(clock, command, cur):
-    """计算当前命中指令段的持续刻数（上升沿时即本次激活总时长）。
-    - 区间段 (a,b)：持续 b-a 刻
-    - 单刻脉冲 (a==b)：1 刻
-    """
-    for a, b in command:
-        if a < b and a <= cur < b:
-            return b - a
-        if a == b and cur == (a % clock if clock != 0 else a):
-            return 1
-    return 1  # 兜底，正常不会走到
-
 
 class Zone:
     is_zone = True
-    is_redstone = False  # 红石机制相关区域：仅在红石刻执行
+    is_redstone = False
     # 空间
     cpos = [0, 0]  # 区块坐标
     bpos = [0, 0]  # 相对坐标
@@ -151,7 +136,7 @@ class RedPlan(Zone):
                 for a, b in self.command
             )
         if on and not self.target.zone_powered:
-            dur = max(_active_ticks(self.clock, self.command, cur if self.clock != 0 else config.state.tick), 1) * config.state.Oneticktime * 2
+            dur = max(fun.active_ticks(self.clock, self.command, cur if self.clock != 0 else config.state.tick), 1) * config.state.Oneticktime * 2
             effects.create_fade(self.target.abpos, (255, 0, 0), dur)
         self.target.zone_powered = on
 
@@ -212,8 +197,7 @@ class MovingPlan(Zone):
                 for a, b in self.command
             )
         if on and self.target.is_moving == 0:
-            # 特效橙色，时长 = 本次激活持续刻数 × 每刻时间，下限为一刻时长
-            dur = max(_active_ticks(self.clock, self.command, cur if self.clock != 0 else config.state.tick), 1) * config.state.Oneticktime * 2
+            dur = max(fun.active_ticks(self.clock, self.command, cur if self.clock != 0 else config.state.tick), 1) * config.state.Oneticktime * 2
             effects.create_fade(self.target.abpos, (255, 165, 0), dur)
         self.target.is_moving = 1 if on else 0
 

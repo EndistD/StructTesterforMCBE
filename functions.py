@@ -1,6 +1,5 @@
 import config
 
-
 def vturns(vpos):
     sx = config.state.Spos[0] + (vpos[0] - config.state.Vpos[0]) / config.state.Zoom
     sy = config.state.Spos[1] + (vpos[1] - config.state.Vpos[1]) / config.state.Zoom
@@ -161,28 +160,10 @@ def findlastelement(target, emptyvalue=0):
             return step
     return -1
 
-
-def reset_world(chunk_size=None):
-    #重置
-    if chunk_size is not None:
-        config.state.ChunkSize = chunk_size
-        config.state.Vsize = config.state.BaseBlockSize * config.state.SubChunkSize * chunk_size
-
-    cs = config.state.ChunkSize
-    ss = config.state.SubChunkSize
-
-    # 镜头复位
-    config.state.Vpos = [config.state.Vsize / 2, config.state.Vsize / 2]
-
-    # 重建数据结构
-    import blocks
-    config.state.ChunkList = [[blocks.Air(cidturnc(c), bidturnub(b)) for b in range(ss * ss)]
-                              for c in range(cs * cs)]
-    config.state.ZoneList = [[[] for b in range(ss * ss)]
-                             for c in range(cs * cs)]
-    config.state.ChunkOrder = list(range(cs * cs))
-    config.state.BlockOrder = list(range(ss * ss))
-    config.state.PendingTickList = [config.PendingTickQueue() for _ in range(cs * cs)]
-
-    from simulation import createbarrier
-    createbarrier(config.state.ChunkList)
+def active_ticks(clock, command, cur):
+    for a, b in command:
+        if a < b and a <= cur < b:
+            return b - a
+        if a == b and cur == (a % clock if clock != 0 else a):
+            return 1
+    return 1

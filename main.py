@@ -75,7 +75,7 @@ config.state.ZoneList = [[[] for b in range(config.state.SubChunkSize * config.s
                   for c in range(config.state.ChunkSize * config.state.ChunkSize)]
 config.state.PromptList = []
 config.state.ChunkOrder = list(range(config.state.ChunkSize * config.state.ChunkSize))
-config.state.PendingTickList = [config.PendingTickQueue() for _ in config.state.ChunkOrder]
+config.state.PendingTickList = [simulation.PendingTickQueue() for _ in config.state.ChunkOrder]
 config.state.BlockOrder = list(range(config.state.SubChunkSize * config.state.SubChunkSize))
 simulation.createbarrier(config.state.ChunkList)
 
@@ -164,7 +164,6 @@ while running:
     for event in pg.event.get():
         # 窗口大小
         if event.type == pg.VIDEORESIZE:
-            # 只记录待应用尺寸，统一在绘制前合并处理，避免拖动中高频重建窗口
             pending_resize = [max(config.state.Minsize[0], event.size[0]),
                               max(config.state.Minsize[1], event.size[1])]
 
